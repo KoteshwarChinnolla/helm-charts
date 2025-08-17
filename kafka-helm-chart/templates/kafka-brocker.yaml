@@ -1,0 +1,155 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-broker
+  labels:
+    app: kafka-broker
+spec:
+  ports:
+    - port: 9092
+      targetPort: 9092
+      protocol: TCP
+  clusterIP: None
+  selector:
+    app: kafka-broker
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka-broker
+spec:
+  selector:
+    matchLabels:
+      app: kafka-broker
+  serviceName: "kafka-broker"
+  replicas: {{ .Values.brokerReplicas }}
+  
+  template:
+    metadata:
+      labels:
+        app: kafka-broker
+    spec:
+      terminationGracePeriodSeconds: 10
+      serviceAccountName: {{ .Values.serviceAccountName | default "kafka-service-account" }}
+      volumes:
+        - name: broker-config
+          configMap:
+            name: kafka-cluster-config
+            items:
+              - key: broker.properties
+                path: broker.properties
+        - name: generated-config
+          emptyDir: {}
+        - name: kafka-script
+          configMap:
+            name: kafka-script
+            defaultMode: 0755
+            items:
+              - key: generate-voters.sh
+                path: generate-voters.sh
+      initContainers:
+      - name: kafka-init
+        image: confluentinc/cp-kafka:7.4.0
+        env:
+          - name: CLUSTER_ID
+            valueFrom:
+              configMapKeyRef:
+                name: kafka-cluster-config
+                key: CLUSTER_ID
+          - name: CONTROLLER_REPLICAS
+            valueFrom:
+              configMapKeyRef:
+                name: kafka-cluster-config
+                key: CONTROLLER_REPLICAS
+        command:
+          - sh
+          - -c
+          - |
+            cp /kafka/broker.properties /tmp/broker.properties
+            HOSTNAME_TEMP=$(hostname)
+            HOSTNAME="$HOSTNAME_TEMP.kafka-broker.kafka.svc.cluster.local"
+            NODE_INDEX=$(echo $HOSTNAME_TEMP | sed 's/kafka-broker-//')
+            NODE_ID=$((NODE_INDEX + CONTROLLER_REPLICAS))
+            CONTROLLER_REPLICAS=$(echo $CONTROLLER_REPLICAS)
+            echo "node.id=$NODE_ID" >> /tmp/broker.properties
+            echo "node.name=$HOSTNAME_TEMP" >> /tmp/broker.properties
+            echo "listeners=PLAINTEXT://$HOSTNAME:9092,PLAINTEXT_INTERNAL://$HOSTNAME:29092" >> /tmp/broker.properties
+            echo "advertised.listeners=PLAINTEXT://$HOSTNAME:9092,PLAINTEXT_INTERNAL://$HOSTNAME:29092" >> /tmp/broker.properties
+            echo "metadata.log.dir=/var/lib/kafka/data" >> /tmp/broker.properties
+            echo "inter.broker.listener.name=PLAINTEXT_INTERNAL" >> /tmp/broker.properties
+            VOTERS=$(/kafka/scripts/generate-voters.sh $CONTROLLER_REPLICAS)
+            echo "controller.quorum.voters=${VOTERS}" >> /tmp/broker.properties
+            cp /tmp/broker.properties /kafka/generated-config/broker.properties
+
+
+        volumeMounts:
+          - name: kafka-data
+            mountPath: /var/lib/kafka/data
+          - name: broker-config
+            mountPath: /kafka/broker.properties
+            subPath: broker.properties
+          - name: generated-config
+            mountPath: /kafka/generated-config
+          - name: kafka-script
+            mountPath: /kafka/scripts
+      containers:
+      - name: kafka-broker
+        image: confluentinc/cp-kafka:7.4.0
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 9092
+            name: broker
+          - containerPort: 29092
+            name: internal
+        env:
+          - name: CLUSTER_ID
+            valueFrom:
+              configMapKeyRef:
+                name: kafka-cluster-config
+                key: CLUSTER_ID
+          - name: CONTROLLER_REPLICAS
+            valueFrom:
+              configMapKeyRef:
+                name: kafka-cluster-config
+                key: CONTROLLER_REPLICAS
+        command:
+          - sh
+          - -c
+          - |
+            HOSTNAME_TEMP=$(hostname)
+            HOSTNAME="$HOSTNAME_TEMP.kafka-broker.kafka.svc.cluster.local"
+            NODE_INDEX=$(echo $HOSTNAME_TEMP | sed 's/kafka-broker-//')
+            VOTERS=$(/kafka/scripts/generate-voters.sh $CONTROLLER_REPLICAS)
+            export KAFKA_NODE_ID=$((NODE_INDEX + CONTROLLER_REPLICAS))
+            export KAFKA_PROCESS_ROLES=broker
+            export KAFKA_LISTENERS="PLAINTEXT://$HOSTNAME:9092,PLAINTEXT_INTERNAL://$HOSTNAME:29092"
+            export KAFKA_ADVERTISED_LISTENERS="PLAINTEXT://$HOSTNAME:9092,PLAINTEXT_INTERNAL://$HOSTNAME:29092"
+            export KAFKA_LISTENER_SECURITY_PROTOCOL_MAP="PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
+            export KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+            export KAFKA_CONTROLLER_QUORUM_VOTERS=${VOTERS}
+            export KAFKA_LOG_DIRS=/var/lib/kafka/data
+            export KAFKA_CLUSTER_ID=$CLUSTER_ID
+            export CLUSTER_ID=$CLUSTER_ID
+
+            # if [ ! -f "/var/lib/kafka/data/meta.properties" ]; then
+            kafka-storage format --ignore-formatted --cluster-id $CLUSTER_ID --config /kafka/broker.properties 
+            # fi
+            /etc/confluent/docker/run
+        volumeMounts:
+          - name: kafka-data
+            mountPath: /var/lib/kafka/data
+          - name: generated-config
+            mountPath: /kafka/broker.properties
+            subPath: broker.properties
+          - name: kafka-script
+            mountPath: /kafka/scripts
+
+  volumeClaimTemplates:
+  - metadata:
+      name: kafka-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.storageClassName | default "standard" }}
+      resources:
+        requests:
+          storage: {{ .Values.storageSize_broker | default "10Gi" }}

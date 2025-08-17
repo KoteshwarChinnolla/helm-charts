@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-script
+  namespace: kafka
+data:
+  generate-voters.sh: |
+    #!/bin/bash
+    set -e
+    REPLICAS=$1
+    VOTERS=""
+    for i in $(seq 0 $((REPLICAS - 1))); do
+      ENTRY="${i}@kafka-controller-${i}.kafka-controller.kafka.svc.cluster.local:9091"
+      if [ $i -eq 0 ]; then
+        VOTERS="$ENTRY"
+      else
+        VOTERS="${VOTERS},$ENTRY"
+      fi
+    done
+    echo "$VOTERS"
