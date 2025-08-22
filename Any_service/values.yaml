@@ -1,0 +1,81 @@
+
+replicaCount: 2
+
+microservice:
+  name: employee
+  namespace: hrms
+  port: 8081
+
+
+image:
+  repository: koti21/employee-service-hrms
+  pullPolicy: IfNotPresent
+  tag: "v1"
+
+
+resources: 
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  # Optional:
+  # targetMemoryUtilizationPercentage: 75
+
+livenessProbe:
+  path: "employee/actuator/health/liveness"
+  initialDelaySeconds: 180
+  periodSeconds: 10
+
+readinessProbe:
+  path: "employee/actuator/health/readiness"
+  initialDelaySeconds: 150
+  periodSeconds: 10
+
+service:
+  type: NodePort
+  port: 80
+  nodePort: 30081
+
+gateway:
+  namespace: istio-ingress
+  name: gateway
+  hostname: "hrms.anasolconsultancyservices.com"
+httprouts:
+  hostnames: ["hrms.anasolconsultancyservices.com"]
+  path: "/employee"
+
+serviceAccount:
+  annotations:
+    example.com/annotation: "value"
+  rules:
+    - apiGroups: [""]
+      resources: ["pods"] 
+      verbs: ["get", "list", "watch"]
+
+
+certificate:
+  enabled: false
+  name: wildcard-cert
+  namespace: cert-manager
+  secretName: wildcard-cert-tls
+  dnsNames:
+    - "*.anasolconsultancyservices.com"
+  email: chinnollakoteshwar@gmail.com
+  issuer:
+    name: letsencrypt
+    kind: ClusterIssuer
+    server: https://acme-v02.api.letsencrypt.org/directory
+  route53:
+    region: us-east-1
+    secretName: route53-secret
+    accessKeyIdKey: access-key-id
+    secretAccessKeyKey: secret-access-key

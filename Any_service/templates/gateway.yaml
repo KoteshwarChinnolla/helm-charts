@@ -1,0 +1,43 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: gateway
+  namespace: {{ .Values.gateway.namespace }}
+spec:
+  gatewayClassName: istio
+  listeners:
+    - name: {{ .Values.microservice.name }}-http-listener
+      hostname: {{ .Values.gateway.hostname }}
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+          namespaces:
+              from: All
+  # listeners:
+    - name: {{ .Values.microservice.name }}-https-listener
+      hostname: {{ .Values.gateway.hostname }}
+      port: 443
+      protocol: HTTPS
+      tls:
+        certificateRefs:
+          - name: {{ .Values.certificate.name }}
+      allowedRoutes:
+          namespaces:
+              from: All
+
+
+# apiVersion: gateway.networking.k8s.io/v1
+# kind: Gateway
+# metadata:
+#   name: gateway
+#   namespace: istio-ingress
+# spec:
+#   gatewayClassName: istio
+#   listeners:
+#   - name: default
+#     hostname: "*.example.com"
+#     port: 80
+#     protocol: HTTP
+#     allowedRoutes:
+#       namespaces:
+#         from: All
