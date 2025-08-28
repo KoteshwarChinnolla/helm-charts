@@ -1,0 +1,30 @@
+{{- if .Values.gateway_service.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: gateway
+spec:
+  gatewayClassName: istio
+  listeners:
+  - name: {{ .Values.project.name }}-http-listener
+    hostname: {{ .Values.gateway_service.hostname }}
+    port: 80
+    protocol: HTTP
+    allowedRoutes:
+      namespaces:
+        from: All
+  - name: {{ .Values.project.name }}-https-listener
+    hostname: {{ .Values.gateway_service.hostname }}
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+        - kind: Secret
+          name: {{ .Values.certificate.secretName }}
+    allowedRoutes:
+      namespaces:
+        from: All
+  infrastructure:
+    labels:
+      istio-injection: {{ .Values.gateway_service.isthio_injection | default "disable" }}
+{{- end }}

@@ -1,0 +1,8 @@
+# Ignore ALL init.sh files everywhere
+init.sh
+
+# Ignore the entire postgress folder
+postgress/
+
+# Ignore the entire values folder
+values/

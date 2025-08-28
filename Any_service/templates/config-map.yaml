@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap-{{ .Values.microservice.name }}
+data:
+{{- range $key, $value := .Values.configMapData }}
+  {{ $key }}: "{{ $value }}"
+{{- end }}

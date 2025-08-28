@@ -1,0 +1,150 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-controller
+  labels:
+    app: kafka-controller
+spec:
+  ports:
+    - port: 9091
+      targetPort: 9091
+      protocol: TCP
+  clusterIP: None
+  selector:
+    app: kafka-controller
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka-controller
+spec:
+  selector:
+    matchLabels:
+      app: kafka-controller
+  serviceName: "kafka-controller"
+  
+  replicas: {{ .Values.controllerReplicas }}
+  template:
+    metadata:
+      labels:
+        app: kafka-controller
+    spec:
+      terminationGracePeriodSeconds: 10
+      serviceAccountName: {{ .Values.serviceAccountName | default "kafka-service-account" }}
+
+      volumes:
+        - name: controller-config
+          configMap:
+            name: kafka-cluster-config
+            defaultMode: 0755
+            items:
+              - key: controller.properties
+                path: controller.properties
+        - name: generated-config
+          emptyDir: {}
+        - name: kafka-script
+          configMap:
+            name: kafka-script
+            defaultMode: 0755
+            items:
+              - key: generate-voters.sh
+                path: generate-voters.sh
+              
+
+      initContainers:
+      - name: kafka-init
+        image: confluentinc/cp-kafka:7.4.0
+        env:
+          - name: CLUSTER_ID
+            valueFrom:
+              configMapKeyRef:
+                name: kafka-cluster-config
+                key: CLUSTER_ID
+          - name: CONTROLLER_REPLICAS
+            valueFrom:
+              configMapKeyRef:
+                name: kafka-cluster-config
+                key: CONTROLLER_REPLICAS
+        command:
+          - sh
+          - -c
+          - |
+            HOSTNAME=$(hostname)
+            NODE_ID=$(echo $HOSTNAME | sed 's/kafka-controller-//')
+            CONTROLLER_REPLICAS=$(echo $CONTROLLER_REPLICAS)
+            VOTERS=$(/kafka/scripts/generate-voters.sh $CONTROLLER_REPLICAS)
+            export KAFKA_NODE_ID=$NODE_ID
+            export KAFKA_NODE_NAME=$HOSTNAME
+            cp /kafka/controller.properties /tmp/controller.properties
+            echo "node.id=$KAFKA_NODE_ID" >> /tmp/controller.properties
+            echo "controller.quorum.voters=${VOTERS}" >> /tmp/controller.properties
+            cp /tmp/controller.properties /kafka/generated-config/controller.properties
+            
+
+        volumeMounts:
+          - name: kafka-data
+            mountPath: /var/lib/kafka/data
+          - name: controller-config
+            mountPath: /kafka/controller.properties
+            subPath: controller.properties
+          - name: generated-config
+            mountPath: /kafka/generated-config
+          - name: kafka-script
+            mountPath: /kafka/scripts
+
+      containers:
+      - name: kafka-controller
+        image: confluentinc/cp-kafka:7.4.0
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 9091
+            name: controller
+        command:
+          - sh
+          - -c
+          - |
+            HOSTNAME_TEMP=$(hostname)
+            HOSTNAME="$HOSTNAME_TEMP.kafka-controller.kafka.svc.cluster.local"
+            CONTROLLER_REPLICAS=$(echo $CONTROLLER_REPLICAS)
+            VOTERS=$(/kafka/scripts/generate-voters.sh $CONTROLLER_REPLICAS)
+            export NODE_ID=$(echo $HOSTNAME_TEMP | sed 's/kafka-controller-//')
+            export KAFKA_NODE_ID=$NODE_ID
+            export KAFKA_LISTENERS="CONTROLLER://$HOSTNAME:9091"
+            export KAFKA_CONTROLLER_QUORUM_VOTERS=${VOTERS}
+            kafka-storage format --ignore-formatted --cluster-id $CLUSTER_ID --config /kafka/controller.properties
+            /etc/confluent/docker/run
+        env:
+          - name: KAFKA_PROCESS_ROLES
+            value: controller
+          - name: KAFKA_CONTROLLER_LISTENER_NAMES
+            value: CONTROLLER
+          - name: KAFKA_LOG_DIRS
+            value: /var/lib/kafka/data
+          - name: CLUSTER_ID
+            valueFrom:
+              configMapKeyRef:
+                name: kafka-cluster-config
+                key: CLUSTER_ID
+          - name: CONTROLLER_REPLICAS
+            valueFrom:
+              configMapKeyRef:
+                name: kafka-cluster-config
+                key: CONTROLLER_REPLICAS
+        volumeMounts:
+          - name: kafka-data
+            mountPath: /var/lib/kafka/data
+          - name: generated-config
+            mountPath: /kafka/controller.properties
+            subPath: controller.properties
+          - name: kafka-script
+            mountPath: /kafka/scripts
+
+  volumeClaimTemplates:
+  - metadata:
+      name: kafka-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.storageClassName | default "standard" }}
+      resources:
+        requests:
+          storage: {{ .Values.storageSize_controller | default "1Gi" }}

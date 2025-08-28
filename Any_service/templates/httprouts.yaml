@@ -1,0 +1,51 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ .Values.microservice.name }}-http-route
+spec:
+  parentRefs:
+  - name: gateway
+    namespace: {{ .Values.gateway_service.namespace }}
+  hostnames: {{ .Values.httprouts.hostnames }}
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: {{ .Values.httprouts.path | default "/{{ .Values.microservice.name}}" }}
+    backendRefs:
+    - name: {{ .Values.microservice.name }}-service
+      port: {{ .Values.service.port }}
+    timeout: 
+      request: {{ .Values.httprouts.timeout_request | default "30s" }}
+    retry:
+      codes: {{ .Values.httprouts.retry_codes | default "[500, 502, 503, 504]" }}
+      attempts: {{ .Values.httprouts.retry_attempts | default 3 }}
+      backoff: {{ .Values.httprouts.retry_backoff | default "1s" }}
+
+
+
+
+
+
+
+
+
+
+# apiVersion: gateway.networking.k8s.io/v1
+# kind: HTTPRoute
+# metadata:
+#   name: http
+#   namespace: default
+# spec:
+#   parentRefs:
+#   - name: gateway
+#     namespace: istio-ingress
+#   hostnames: ["httpbin.example.com"]
+#   rules:
+#   - matches:
+#     - path:
+#         type: PathPrefix
+#         value: /get
+#     backendRefs:
+#     - name: httpbin
+#       port: 8000

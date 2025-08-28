@@ -1,0 +1,26 @@
+project:
+  name: hrms
+
+gateway_service:
+  enabled: false
+  namespace: istio-gateway
+  name: auth-gateway
+  hostname: "hrms.anasolconsultancyservices.com"
+  isthio_injection: "disable"
+
+certificate:
+  enabled: false
+  name: certificate-hrms
+  secretName: cirtificate-hrms-secret
+  dnsNames:
+    - "*.anasolconsultancyservices.com"
+  email: chinnollakoteshwar@gmail.com
+  issuer:
+    name: letsencrypt
+    kind: ClusterIssuer
+    server: https://acme-v02.api.letsencrypt.org/directory
+  route53:
+    region: us-east-1
+    secretName: route53-secret
+    accessKeyIdKey: access-key-id
+    secretAccessKeyKey: secret-access-key

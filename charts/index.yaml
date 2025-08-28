@@ -1,0 +1,25 @@
+apiVersion: v1
+entries:
+  hrms-microservices:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2025-08-23T00:35:19.2380235+05:30"
+    description: A Helm chart for Microservices in hrms
+    digest: fd4ecf0a670f0a42f6e836ad84f847863c69cf6715f35181a1a113dfa972b956
+    name: hrms-microservices
+    type: application
+    urls:
+    - hrms-microservices-0.1.0.tgz
+    version: 0.1.0
+  kafka-helm-chart:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2025-08-23T00:35:19.2618703+05:30"
+    description: A Helm chart for Kubernetes
+    digest: b7d1a9154eb7f5cfc901fac1a3fc353671411c4edac466f82b12f1bf2177f220
+    name: kafka-helm-chart
+    type: application
+    urls:
+    - kafka-helm-chart-0.1.0.tgz
+    version: 0.1.0
+generated: "2025-08-23T00:35:19.1911523+05:30"

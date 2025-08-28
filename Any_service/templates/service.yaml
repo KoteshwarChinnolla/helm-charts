@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.microservice.name }}-service
+  labels:
+    app: {{ .Values.microservice.name }}
+spec:
+  type: {{ .Values.service.type }}
+  {{- if and (eq .Values.service.type "LoadBalancer") .Values.service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
+  {{- end }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.microservice.port }}
+      protocol: TCP
+      {{- if eq .Values.service.type "NodePort" }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
+  selector:
+    app: {{ .Values.microservice.name }}
+
+
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: employee-service
+#   labels:
+#     app: employee
+# spec:
+#   selector:
+#     app: employee
+#   ports:
+#   - protocol: TCP
+#     port: 80
+#     targetPort: 8080
+#     nodePort: 30080
+#   type: NodePort

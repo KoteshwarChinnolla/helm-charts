@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-ui
+  labels:
+    app: kafka-ui
+spec:
+  replicas: {{ .Values.kafka_ui.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: kafka-ui
+  template:
+    metadata:
+      labels:
+        app: kafka-ui
+    spec:
+      containers:
+      - name: kafka-ui
+        image: provectuslabs/kafka-ui:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: KAFKA_CLUSTERS_0_NAME
+          value: kafka-local
+        - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
+          value: kafka-broker.kafka.svc.cluster.local:9092
+        resources:
+          requests:
+            memory: {{ .Values.kafka_ui.resources.requests.memory | default "512Mi" }}
+            cpu: {{ .Values.kafka_ui.resources.requests.cpu | default "500m" }}
+          limits:
+            memory: {{ .Values.kafka_ui.resources.limits.memory | default "1Gi" }}
+            cpu: {{ .Values.kafka_ui.resources.limits.cpu | default "1" }}
+      serviceAccountName: {{ .Values.serviceAccountName | default "kafka-service-account" }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-ui
+spec:
+  type: NodePort
+  selector:
+    app: kafka-ui
+  ports:
+    - port: {{ .Values.kafka_ui.service.port | default 9094 }}
+      targetPort: {{ .Values.kafka_ui.service.targetPort | default 8080 }}
+      nodePort: {{ .Values.kafka_ui.service.nodePort | default 30004 }}

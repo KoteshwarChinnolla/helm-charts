@@ -1,0 +1,22 @@
+{{- if .Values.certificate.enabled }}
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ .Values.certificate.issuer.name }}
+spec:
+  acme:
+    server: {{ .Values.certificate.issuer.server }}
+    email: {{ .Values.certificate.email }}
+    privateKeySecretRef:
+      name: {{ .Values.certificate.issuer.name }}-private-key
+    solvers:
+    - dns01:
+        route53:
+          region: {{ .Values.certificate.route53.region }}
+          accessKeyIDSecretRef:
+            name: {{ .Values.certificate.route53.secretName }}
+            key: {{ .Values.certificate.route53.accessKeyIdKey }}
+          secretAccessKeySecretRef:
+            name: {{ .Values.certificate.route53.secretName }}
+            key: {{ .Values.certificate.route53.secretAccessKeyKey }}
+{{- end }}

@@ -1,0 +1,12 @@
+# kubectl create namespace hrms
+# kubectl create namespace isthio-gateway
+# kubectl create namespace istio-ingress
+# kubectl create namespace cert-manager
+
+{{- range .Values.namespaces }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ . }}
+---
+{{- end }}

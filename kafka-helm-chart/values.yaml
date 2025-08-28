@@ -1,0 +1,27 @@
+controllerReplicas: 1
+brokerReplicas: 3
+
+
+storageClassName: standard
+storageSize_controller: 1Gi
+storageSize_broker: 5Gi
+
+serviceAccountName: kafka-service-account
+serviceAccount:
+  automount: true
+  annotations: {}
+
+
+kafka_ui:
+  replicas: 1
+  resources:
+    requests:
+      memory: "124Mi"
+      cpu: "100m"
+    limits:
+      memory: "500Mi"
+      cpu: "500m"
+  service:
+    port: 9094
+    targetPort: 8080
+    nodePort: 30004
