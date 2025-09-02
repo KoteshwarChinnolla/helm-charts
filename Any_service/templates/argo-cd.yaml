@@ -12,33 +12,10 @@ spec:
     helm:
       releaseName: {{ .Release.Name }}
       valueFiles:
-        - $values/{{ .Values.argo-cd.path_to_values }}
+        - "$values/{{ .Values.argo-cd.path_to_values }}"
   - repoURL: {{ .Values.argo-cd.microservice_repo_url }}
     targetRevision: {{ .Values.argo-cd.branch | default "main" }}
     ref: values
   destination:
     server: {{ .Values.argo-cd.destination_server }}
     namespace: {{ .Values.microservice.namespace }}
-
-
-# apiVersion: argoproj.io/v1alpha1
-# kind: Application
-# metadata:
-#   name: employee
-#   namespace: argocd
-# spec:
-#   project: default
-#   sources:
-#   - repoURL: 'https://koteshwarchinnolla.github.io/helm-charts/charts'
-#     chart: hrms-microservices
-#     targetRevision: 0.1.0
-#     helm:
-#       releaseName: hrms-helm
-#       valueFiles:
-#         - $values/employee/values.yaml
-#   - repoURL: 'https://github.com/KoteshwarChinnolla/TECHLIFE-BACKEND'
-#     targetRevision: main
-#     ref: values
-#   destination:
-#     server: "https://kubernetes.default.svc"
-#     namespace: hrms
