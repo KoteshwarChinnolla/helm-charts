@@ -1,22 +1,22 @@
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: {{ .Values.microservice.name }}
-  namespace: argocd
-spec:
-  project: default
-  sources:
-  - repoURL: {{ .Values.argo-cd.helm_url }}
-    chart: {{ .Values.argo-cd.chart_name }}
-    targetRevision: {{ .Values.argo-cd.chart_version }}
-    helm:
-      releaseName: {{ .Release.Name }}
-      valueFiles:
-        - "values/{{ .Values.argo-cd.path_to_values }}"
-  - repoURL: {{ .Values.argo-cd.microservice_repo_url }}
-    targetRevision: {{ .Values.argo-cd.branch | default "main" }}
-    ref: values
-  destination:
-    server: {{ .Values.argo-cd.destination_server }}
-    namespace: {{ .Values.microservice.namespace }}
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: {{ .Values.microservice.name }}
+#   namespace: argocd
+# spec:
+#   project: default
+#   sources:
+#   - repoURL: {{ .Values.argo_cd.helm_url }}
+#     chart: {{ .Values.argo_cd.chart_name }}
+#     targetRevision: {{ .Values.argo_cd.chart_version }}
+#     helm:
+#       releaseName: {{ .Release.Name }}
+#       valueFiles:
+#         - "values/{{ .Values.argo-cd.path_to_values }}"
+#   - repoURL: {{ .Values.argo-cd.microservice_repo_url }}
+#     targetRevision: {{ .Values.argo-cd.branch | default "main" }}
+#     ref: values
+#   destination:
+#     server: {{ .Values.argo-cd.destination_server }}
+#     namespace: {{ .Values.microservice.namespace }}
 
