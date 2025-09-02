@@ -95,3 +95,11 @@
 #       resources: ["pods", "services", "endpoints"] 
 #       verbs: ["get", "list", "watch"]
 
+# argo-cd:
+#   helm_url: https://koteshwarchinnolla.github.io/helm-charts/charts
+#   chart_name: hrms-microservices
+#   chart_version: 1.16.0
+#   path_to_values: employee/values.yaml
+#   microservice_repo_url: https://github.com/KoteshwarChinnolla/TECHLIFE-BACKEND
+#   branch: main
+#   destination_server: https://kubernetes.default.svc

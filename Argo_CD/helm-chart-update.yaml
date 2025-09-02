@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: employee
+  namespace: argocd
+spec:
+  project: hrms-services
+  source:
+  - repoURL: https://koteshwarchinnolla.github.io/helm-charts/charts
+    chart: hrms-microservices
+    targetRevision: 1.16.0
+    helm:
+      releaseName: hrms-helm
+      valueFiles:
+        - $values/employee/values.yaml
+  - repoURL: 'https://github.com/KoteshwarChinnolla/TECHLIFE-BACKEND'
+    targetRevision: dev
+    ref: values
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: hrms
