@@ -1,105 +1,111 @@
 
-# replicaCount: 2
+replicaCount: 2
 
-# microservice:
-#   name: notifications
-#   namespace: hrms
-#   port: 8085
-
-
-# image:
-#   repository: 435073375740.dkr.ecr.ap-south-1.amazonaws.com/hrms/notifications
-#   pullPolicy: IfNotPresent
-#   tag: "v1.0.0"
-
-# env:
-#   APPLICATION_NAME: Notifications
-#   DATABASE_URL: 
-#   JPA_HIBERNATE_DDL_AUTO: update
-
-#   CACHE_TYPE: redis
-#   DATA_REDIS_SENTINEL_MASTER: mymaster
-#   DATA_REDIS_PASSWORD: RedisPasswordMaster
-#   DATA_REDIS_SENTINEL_NODES: my-redis.redis.svc.cluster.local:26379
-
-#   SERVER_ADDRESS: 0.0.0.0
-#   SERVER_PORT: 8085
-#   MAIL_HOST: email-smtp.eu-north-1.amazonaws.com
-#   SMTP_PORT: 587
-#   FROM_EMAIL_ADDRESS: no-reply@anasolconsultancyservices.com
+microservice:
+  name: employee
+  namespace: hrms
+  port: 8090
 
 
+image:
+  repository: 435073375740.dkr.ecr.ap-south-1.amazonaws.com/hrms/employee
+  pullPolicy: IfNotPresent
+  tag: "v1.0.3"
 
-# envFromSecret:
-#   DB_USERNAME:
-#     name: notification-db-secret
-#     key: username
-#   DB_PASSWORD:
-#     name: notification-db-secret
-#     key: password
-#   MAIL_USERNAME:
-#     name: notification-aws-secret
-#     key: smtp-username
-#   MAIL_PASSWORD:
-#     name: notification-aws-secret
-#     key: smtp-password
-  
+env:
+  # Application
+  SPRING_APPLICATION_NAME: project
+  SERVER_PORT: 8090
+  SERVER_ADDRESS: 0.0.0.0
 
-# resources: 
-#   limits:
-#     cpu: 1000m
-#     memory: 512Mi
-#   requests:
-#     cpu: 100m
-#     memory: 128Mi
+  # Database
+  SPRING_DATASOURCE_URL: jdbc:postgresql://hrmdb.c3ykgskuuzr8.ap-south-1.rds.amazonaws.com:5432/postgres
+  SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: employee
+  SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+  SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+  SPRING_JPA_HIBERNATE_DDL_AUTO: update
+  SPRING_JPA_SHOW_SQL: true
+  SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
 
+  # File Uploads
+  SPRING_SERVLET_MULTIPART_ENABLED: true
+  SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE: 50MB
+  SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE: 100MB
 
-# autoscaling:
-#   enabled: false
-#   minReplicas: 2
-#   maxReplicas: 10
-#   targetCPUUtilizationPercentage: 80
+  # AWS
+  CLOUD_AWS_REGION_STATIC: ap-south-1
+  CLOUD_AWS_S3_BUCKET: techlifeacs
 
-# livenessProbe:
-#   path: "actuator/health/liveness"
-#   initialDelaySeconds: 180
-#   periodSeconds: 10
-
-# readinessProbe:
-#   path: "actuator/health/readiness"
-#   initialDelaySeconds: 150
-#   periodSeconds: 10
-
-# service:
-#   type: NodePort
-#   port: 80
-#   nodePort: 30083
-
-# gateway_service:
-#   namespace: istio-gateway
+envFromSecret:
+  SPRING_DATASOURCE_USERNAME:
+    name: employee-db-secret
+    key: username
+  SPRING_DATASOURCE_PASSWORD:
+    name: employee-db-secret
+    key: password
+  CLOUD_AWS_CREDENTIALS_ACCESSKEY:
+    name: employee-aws-access
+    key: aws-access-key
+  CLOUD_AWS_CREDENTIALS_SECRETKEY:
+    name: employee-aws-access
+    key: aws-secret-key
 
 
-# httprouts:
-#   hostnames: ["hrms.anasolconsultancyservices.com"]
-#   path: "/api/notification"
-#   timeout_request: "3s"
-#   retry_codes: [500, 502, 503, 504]
-#   retry_attempts: 3
-#   retry_backoff: "1s"
+resources:
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
 
-# serviceAccount:
-#   annotations:
-#     example.com/annotation: "value"
-#   rules:
-#     - apiGroups: [""]
-#       resources: ["pods", "services", "endpoints"] 
-#       verbs: ["get", "list", "watch"]
 
-# argo-cd:
-#   helm_url: https://koteshwarchinnolla.github.io/helm-charts/charts
-#   chart_name: hrms-microservices
-#   chart_version: 1.16.0
-#   path_to_values: employee/values.yaml
-#   microservice_repo_url: https://github.com/KoteshwarChinnolla/TECHLIFE-BACKEND
-#   branch: main
-#   destination_server: https://kubernetes.default.svc
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+
+livenessProbe:
+  path: "actuator/health/liveness"
+  initialDelaySeconds: 180
+  periodSeconds: 10
+
+readinessProbe:
+  path: "actuator/health/readiness"
+  initialDelaySeconds: 150
+  periodSeconds: 10
+
+service:
+  type: NodePort
+  port: 80
+  nodePort: 30081
+
+gateway_service:
+  namespace: istio-gateway
+
+
+httprouts:
+  hostnames: ["hrms.anasolconsultancyservices.com"]
+  path: "/api/employee"
+  timeout_request: "3s"
+  retry_codes: [500, 502, 503, 504]
+  retry_attempts: 3
+  retry_backoff: "1s"
+
+serviceAccount:
+  annotations:
+    example.com/annotation: "value"
+  rules:
+    - apiGroups: [""]
+      resources: ["pods", "endpoints", "services", "secrets", "configmaps"]
+      verbs: ["get", "list", "watch"]
+
+argo-cd:
+  helm_url: 'https://koteshwarchinnolla.github.io/helm-charts/charts'
+  chart_name: hrms-microservices
+  chart_version: 0.1.0
+  path_to_values: employee/values.yaml
+  microservice_repo_url: 'https://github.com/KoteshwarChinnolla/TECHLIFE-BACKEND'
+  branch: main
+  destination_server: https://kubernetes.default.svc
