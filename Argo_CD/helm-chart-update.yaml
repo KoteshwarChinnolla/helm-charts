@@ -6,7 +6,7 @@ metadata:
 spec:
   project: hrms-services
   source:
-  - repoURL: https://koteshwarchinnolla.github.io/helm-charts/charts
+  - repoURL: 'https://koteshwarchinnolla.github.io/helm-charts/charts'
     chart: hrms-microservices
     targetRevision: 1.16.0
     helm:
