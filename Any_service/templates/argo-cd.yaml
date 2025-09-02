@@ -12,10 +12,11 @@ spec:
     helm:
       releaseName: {{ .Release.Name }}
       valueFiles:
-        - "$values/{{ .Values.argo-cd.path_to_values }}"
+        - "values/{{ .Values.argo-cd.path_to_values }}"
   - repoURL: {{ .Values.argo-cd.microservice_repo_url }}
     targetRevision: {{ .Values.argo-cd.branch | default "main" }}
     ref: values
   destination:
     server: {{ .Values.argo-cd.destination_server }}
     namespace: {{ .Values.microservice.namespace }}
+
