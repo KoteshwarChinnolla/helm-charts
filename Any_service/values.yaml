@@ -101,7 +101,7 @@ serviceAccount:
       resources: ["pods", "endpoints", "services", "secrets", "configmaps"]
       verbs: ["get", "list", "watch"]
 
-argo-cd:
+argo_cd:
   helm_url: 'https://koteshwarchinnolla.github.io/helm-charts/charts'
   chart_name: hrms-microservices
   chart_version: 0.1.0

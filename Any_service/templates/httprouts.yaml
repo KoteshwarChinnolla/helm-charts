@@ -15,15 +15,6 @@ spec:
     backendRefs:
     - name: {{ .Values.microservice.name }}-service
       port: {{ .Values.service.port }}
-    timeout: 
-      request: {{ .Values.httprouts.timeout_request | default "30s" }}
-    retry:
-      codes: {{ .Values.httprouts.retry_codes | default "[500, 502, 503, 504]" }}
-      attempts: {{ .Values.httprouts.retry_attempts | default 3 }}
-      backoff: {{ .Values.httprouts.retry_backoff | default "1s" }}
-
-
-
 
 
 
