@@ -104,6 +104,7 @@
 # argo_cd:
 #   helm_url: 'https://koteshwarchinnolla.github.io/helm-charts/charts'
 #   chart_name: hrms-microservices
+#   auto_sync: true
 #   chart_version: 0.1.0
 #   path_to_values: employee/values.yaml
 #   microservice_repo_url: 'https://github.com/KoteshwarChinnolla/TECHLIFE-BACKEND'
