@@ -4,6 +4,9 @@ metadata:
   name: {{ .Values.microservice.name }}
   namespace: argocd
 spec:
+  syncPolicy:
+    automated:
+      enabled: {{ .Values.argo_cd.auto_sync | default true }}
   project: default
   sources:
   - repoURL: {{ .Values.argo_cd.helm_url }}
@@ -19,3 +22,4 @@ spec:
   destination:
     server: {{ .Values.argo_cd.destination_server }}
     namespace: {{ .Values.microservice.namespace }}
+
