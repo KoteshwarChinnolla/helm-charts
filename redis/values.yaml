@@ -1,0 +1,41 @@
+storageClass: "gp2"
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: "redis-service-account"
+
+replica:
+  name: redis
+  count: 3
+  image: redis:7.4-alpine
+  port: 6379
+  replicaStorage: 1Gi
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "250m"
+    limits:
+      memory: "128Mi"
+      cpu: "500m"
+  Config:
+    bind: "0.0.0.0"
+    protected-mode: "no"
+    port: 6379
+    dir: "/data"
+    masterauth: "RedisPasswordMaster"
+    min-replicas-to-write: 2
+    requirepass: "RedisPasswordMaster"
+    appendonly: "yes"
+
+masterPassword: RedisPasswordMaster
+
+sentinel:
+  name: sentinel
+  image: redis:7.4-alpine
+  port: 5000
+  quorum: 2
+  sentinelStorage: 1Gi
+
+  # helm uninstall chat  --namespace hrms

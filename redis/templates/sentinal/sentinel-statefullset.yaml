@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.sentinel.name }}
+spec:
+  serviceName: {{ .Values.sentinel.name }}-service
+  replicas: 3
+  selector:
+    matchLabels:
+      app: {{ .Values.sentinel.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.sentinel.name }}
+    spec:
+      initContainers:
+        - name: config
+          image: {{ .Values.sentinel.image }}
+          command: [ "sh", "-c" ]
+          env:
+            - name: REDIS_PASSWORD
+              value: {{ .Values.masterPassword | quote }}
+            - name: REPLICA_NAME
+              value: {{ .Values.replica.name }}
+            - name: REPLICA_PORT
+              value: "{{ .Values.replica.port }}"
+            - name: REPLICA_COUNT
+              value: "{{ .Values.replica.count }}"
+            - name: QUORUM
+              value: "{{ .Values.sentinel.quorum }}"
+          args:
+            - |
+              for i in $(seq 0 $(($REPLICA_COUNT-1))); do
+                  echo "Finding master at ${REPLICA_NAME}-$i"
+                  MASTER=$(redis-cli --no-auth-warning --raw -h ${REPLICA_NAME}-$i -a $REDIS_PASSWORD info replication | grep master_host: | cut -d ":" -f2)
+                  if [ -n "$MASTER" ]; then
+                      echo "Found master $MASTER"
+                      break
+                  fi
+              done
+              if [ -z "$MASTER" ]; then
+                  echo "No master found, defaulting to ${REPLICA_NAME}-0"
+                  MASTER=${REPLICA_NAME}-0.${REPLICA_NAME}-service.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local
+              fi
+
+              cat <<EOF > /etc/redis/sentinel.conf
+              port {{ .Values.sentinel.port }}
+              sentinel resolve-hostnames yes
+              sentinel announce-hostnames yes
+              sentinel monitor mymaster $MASTER $REPLICA_PORT $QUORUM
+              sentinel down-after-milliseconds mymaster 5000
+              sentinel failover-timeout mymaster 60000
+              sentinel parallel-syncs mymaster 1
+              sentinel auth-pass mymaster $REDIS_PASSWORD
+              EOF
+
+              cat /etc/redis/sentinel.conf
+          volumeMounts:
+            - name: redis-config
+              mountPath: /etc/redis/
+      containers:
+        - name: {{ .Values.sentinel.name }}
+          image: {{ .Values.sentinel.image }}
+          command: ["redis-sentinel"]
+          args: ["/etc/redis/sentinel.conf"]
+          ports:
+            - containerPort: {{ .Values.sentinel.port }}
+              name: {{ .Values.sentinel.name }}
+          volumeMounts:
+            - name: redis-config
+              mountPath: /etc/redis/
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: redis-config
+          emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.storageClass }}
+      resources:
+        requests:
+          storage: {{ .Values.sentinel.sentinelStorage }}

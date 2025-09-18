@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.replica.name }}-service
+spec:
+  clusterIP: None
+  ports:
+  - port: {{ .Values.replica.port }}
+    targetPort: {{ .Values.replica.port }}
+    name: {{ .Values.replica.name }}
+  selector:
+    app: {{ .Values.replica.name }}
